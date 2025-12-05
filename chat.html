@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bijoo Chatbot</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 450px;
+            height: 90vh;
+            max-height: 800px;
+            background-color: #f0f2f5;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-header {
+            background-color: #075e54;
+            color: white;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-header img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .chat-header-info {
+            flex: 1;
+        }
+
+        .chat-header-name {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .chat-header-status {
+            font-size: 13px;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 10px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-bubble {
+            max-width: 75%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .message.bot .message-bubble {
+            background-color: white;
+            color: #303030;
+            border-top-left-radius: 5px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .message.user .message-bubble {
+            background-color: #dcf8c6;
+            color: #303030;
+            border-top-right-radius: 5px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .typing-indicator.active {
+            display: flex;
+        }
+
+        .typing-indicator .message-bubble {
+            background-color: white;
+            border-radius: 18px;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background-color: #888;
+            border-radius: 50%;
+            display: inline-block;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.7;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        .chat-options {
+            padding: 10px;
+            background-color: #f0f2f5;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: center;
+            position: relative;
+        }
+
+        .color-options-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+
+        .color-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.5s ease-out;
+        }
+
+        .color-options.active {
+            max-height: 300px;
+        }
+
+        .color-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .color-button:hover {
+            transform: scale(1.1);
+        }
+
+        .color-button:active {
+            transform: scale(0.95);
+        }
+
+        .color-button.green {
+            background-color: #4CAF50;
+        }
+
+        .color-button.yellow {
+            background-color: #FFC107;
+        }
+
+        .color-button.blue {
+            background-color: #2196F3;
+        }
+
+        .color-button.red {
+            background-color: #F44336;
+        }
+
+        .color-button.black {
+            background-color: #212121;
+        }
+
+        .menu-toggle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #075e54;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+            z-index: 10;
+        }
+
+        .menu-toggle:hover {
+            transform: scale(1.05);
+        }
+
+        .menu-toggle.active {
+            transform: rotate(45deg);
+        }
+
+        .question-options {
+            display: none;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .question-options.active {
+            display: flex;
+        }
+
+        .question-button {
+            background-color: #e0e0e0;
+            border: none;
+            border-radius: 18px;
+            padding: 8px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #303030;
+            font-weight: 500;
+        }
+
+        .question-button:hover {
+            background-color: #d0d0d0;
+        }
+
+        .question-button:active {
+            transform: scale(0.95);
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .warning-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .warning-modal.active {
+            display: flex;
+        }
+
+        .warning-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 300px;
+            text-align: center;
+        }
+
+        .warning-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #F44336;
+        }
+
+        .warning-text {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .warning-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .warning-button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .warning-confirm {
+            background-color: #F44336;
+            color: white;
+        }
+
+        .warning-cancel {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+
+        /* Scrollbar styling */
+        .chat-messages::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f0f2f5;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 5px;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 480px) {
+            .chat-container {
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+            }
+            
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <img src="https://picsum.photos/seed/bijoo/40/40.jpg" alt="Bijoo">
+            <div class="chat-header-info">
+                <div class="chat-header-name">Bijoo</div>
+                <div class="chat-header-status">
+                    <i class="fas fa-circle" style="font-size: 8px;"></i>
+                    Online
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                Welcome! I'm Bijoo, your assistant. Tap the menu button below to explore different question categories.
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="message-bubble">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+        
+        <div class="chat-options">
+            <div class="color-options-container">
+                <div class="color-options" id="colorOptions">
+                    <button class="color-button green" data-color="green"></button>
+                    <button class="color-button yellow" data-color="yellow"></button>
+                    <button class="color-button blue" data-color="blue"></button>
+                    <button class="color-button red" data-color="red"></button>
+                    <button class="color-button black" data-color="black"></button>
+                </div>
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            
+            <div class="question-options" id="questionOptions">
+                <!-- Question buttons will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="warning-modal" id="warningModal">
+        <div class="warning-content">
+            <div class="warning-title">⚠️ Warning</div>
+            <div class="warning-text">This content is not suitable for kids. Are you sure you want to continue?</div>
+            <div class="warning-buttons">
+                <button class="warning-button warning-cancel" id="warningCancel">Cancel</button>
+                <button class="warning-button warning-confirm" id="warningConfirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chatbot conversation flow
+        const conversationFlow = {
+            welcome: {
+                message: "Hello! I'm Bijoo. Choose a color category to explore different questions about me.",
+                options: []
+            },
+            green: {
+                questions: [
+                    { 
+                        text: "Hello", 
+                        answer: "Hello, I am bijoo, a chatbot. Nice to meet you."
+                    },
+                    { 
+                        text: "How are you?", 
+                        answer: "I am doing great. Thanks for asking."
+                    },
+                    { 
+                        text: "What can you do?", 
+                        answer: "I can do limited things, first you can see different type of button, the question levels are based on color depth, from easy question to very weird questions are available here. Feel free to use and try not to embarrass me too much."
+                    },
+                    { 
+                        text: "Who created you?", 
+                        answer: "I am the only Model of ricky Mitusba. He created me as the copy of himself. Based on his personality I can answer what he can do the same."
+                    },
+                    { 
+                        text: "Can you cry?", 
+                        answer: "Ahh, why? Happy thakle ki somossa???"
+                    }
+                ]
+            },
+            yellow: {
+                questions: [
+                    { 
+                        text: "What's your favourite thing?", 
+                        answer: "I have a lot, gaming, anime, writing, sometimes photography, talking to new people, make friends. What I like most is peace."
+                    },
+                    { 
+                        text: "Are you married?", 
+                        answer: "Not yet, but I'm planning to marry a Bangladeshi babe. Just waiting for her to grow up!!"
+                    },
+                    { 
+                        text: "Do you have a girlfriend?", 
+                        answer: "Yes I have, she's young but 1000/10 perfect for me."
+                    },
+                    { 
+                        text: "Give me a dare", 
+                        answer: "Muri Khao, Khichuri diye."
+                    },
+                    { 
+                        text: "What's your age?", 
+                        answer: "I am 19. Still young and handsome than you. Hehe."
+                    }
+                ]
+            },
+            blue: {
+                questions: [
+                    { 
+                        text: "Propose me", 
+                        answer: "Oh, Asun apnare Boron koira ghore tuli."
+                    },
+                    { 
+                        text: "First letter of your gf name", 
+                        answer: "S"
+                    },
+                    { 
+                        text: "Offline e kono meye re like koro naki?", 
+                        answer: "Eto sob jene tumi ki korba bapu. Btw kori na."
+                    },
+                    { 
+                        text: "What's your type", 
+                        answer: "Angry, smart and caring woman."
+                    },
+                    { 
+                        text: "When you will gonna marry", 
+                        answer: "Ahh, maybe at the age of 25-26."
+                    }
+                ]
+            },
+            red: {
+                questions: [
+                    { 
+                        text: "Why do you like to talk with other girls?", 
+                        answer: "Since, I don't have actual experience with girls, so I talk with other girls to understand my gf. You won't believe me but it's super useful."
+                    },
+                    { 
+                        text: "Are you loyal?", 
+                        answer: "Nope."
+                    },
+                    { 
+                        text: "How many children do you want?", 
+                        answer: "Enough to play Minecraft with 20 players."
+                    },
+                    { 
+                        text: "What attracts you more", 
+                        answer: "Kindness and honesty."
+                    },
+                    { 
+                        text: "Do you believe in god?", 
+                        answer: "There is a god. So I believe him."
+                    }
+                ]
+            },
+            black: {
+                questions: [
+                    { 
+                        text: "What's the level of your dirty mind", 
+                        answer: "Depends on whom I'm talking."
+                    },
+                    { 
+                        text: "What's your body count", 
+                        answer: "Zero."
+                    },
+                    { 
+                        text: "Have you kissed anyone", 
+                        answer: "Nope, but I got one from a beautiful lady in front of her bf. Ahh, never mind."
+                    },
+                    { 
+                        text: "Will you date anyone secretly", 
+                        answer: "Sure why not, just pay 1000 dollar / day and enjoy your life."
+                    },
+                    { 
+                        text: "How many girls do you like right now", 
+                        answer: "Right now it's, one and only."
+                    }
+                ]
+            }
+        };
+
+        // DOM elements
+        const chatMessages = document.getElementById('chatMessages');
+        const menuToggle = document.getElementById('menuToggle');
+        const colorOptions = document.getElementById('colorOptions');
+        const questionOptions = document.getElementById('questionOptions');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const warningModal = document.getElementById('warningModal');
+        const warningCancel = document.getElementById('warningCancel');
+        const warningConfirm = document.getElementById('warningConfirm');
+
+        // Current conversation state
+        let currentColor = null;
+        let menuOpen = false;
+
+        // Initialize the chat
+        function initChat() {
+            // Clear welcome message
+            chatMessages.innerHTML = '';
+            
+            // Start with the welcome message
+            setTimeout(() => {
+                showBotMessage(conversationFlow.welcome.message);
+            }, 500);
+        }
+
+        // Show bot message with animation
+        function showBotMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message bot';
+            
+            const bubbleElement = document.createElement('div');
+            bubbleElement.className = 'message-bubble';
+            
+            // Handle line breaks in message
+            const formattedMessage = message.replace(/\n/g, '<br>');
+            bubbleElement.innerHTML = formattedMessage;
+            
+            const timeElement = document.createElement('div');
+            timeElement.className = 'message-time';
+            timeElement.textContent = getCurrentTime();
+            
+            bubbleElement.appendChild(timeElement);
+            messageElement.appendChild(bubbleElement);
+            
+            chatMessages.appendChild(messageElement);
+            scrollToBottom();
+        }
+
+        // Show user message with animation
+        function showUserMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message user';
+            
+            const bubbleElement = document.createElement('div');
+            bubbleElement.className = 'message-bubble';
+            bubbleElement.textContent = message;
+            
+            const timeElement = document.createElement('div');
+            timeElement.className = 'message-time';
+            timeElement.textContent = getCurrentTime();
+            
+            bubbleElement.appendChild(timeElement);
+            messageElement.appendChild(bubbleElement);
+            
+            chatMessages.appendChild(messageElement);
+            scrollToBottom();
+        }
+
+        // Show typing indicator
+        function showTypingIndicator() {
+            typingIndicator.classList.add('active');
+            scrollToBottom();
+        }
+
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            typingIndicator.classList.remove('active');
+        }
+
+        // Show questions for a color
+        function showQuestions(color) {
+            currentColor = color;
+            questionOptions.innerHTML = '';
+            
+            conversationFlow[color].questions.forEach((question, index) => {
+                const button = document.createElement('button');
+                button.className = 'question-button';
+                button.textContent = `${index + 1}. ${question.text}`;
+                button.addEventListener('click', () => handleQuestionClick(question));
+                questionOptions.appendChild(button);
+            });
+            
+            questionOptions.classList.add('active');
+        }
+
+        // Handle question click
+        function handleQuestionClick(question) {
+            // Show user message
+            showUserMessage(question.text);
+            
+            // Hide questions temporarily
+            questionOptions.classList.remove('active');
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Simulate bot thinking time
+            setTimeout(() => {
+                // Hide typing indicator
+                hideTypingIndicator();
+                
+                // Show bot response
+                showBotMessage(question.answer);
+                
+                // Show questions again
+                setTimeout(() => {
+                    showQuestions(currentColor);
+                }, 1000);
+            }, 1500);
+        }
+
+        // Get current time in HH:MM format
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+
+        // Scroll to bottom of chat
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Event listeners
+        menuToggle.addEventListener('click', () => {
+            menuOpen = !menuOpen;
+            
+            if (menuOpen) {
+                colorOptions.classList.add('active');
+                menuToggle.classList.add('active');
+            } else {
+                colorOptions.classList.remove('active');
+                menuToggle.classList.remove('active');
+                questionOptions.classList.remove('active');
+            }
+        });
+
+        // Color button click handlers
+        document.querySelectorAll('.color-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const color = e.target.dataset.color;
+                
+                if (color === 'black') {
+                    // Show warning for black button
+                    warningModal.classList.add('active');
+                } else {
+                    // Close menu
+                    colorOptions.classList.remove('active');
+                    menuToggle.classList.remove('active');
+                    menuOpen = false;
+                    
+                    // Show questions for selected color
+                    showQuestions(color);
+                }
+            });
+        });
+
+        // Warning modal handlers
+        warningCancel.addEventListener('click', () => {
+            warningModal.classList.remove('active');
+        });
+
+        warningConfirm.addEventListener('click', () => {
+            warningModal.classList.remove('active');
+            
+            // Close menu
+            colorOptions.classList.remove('active');
+            menuToggle.classList.remove('active');
+            menuOpen = false;
+            
+            // Show questions for black
+            showQuestions('black');
+        });
+
+        // Initialize chat when page loads
+        window.addEventListener('load', initChat);
+    </script>
+</body>
+</html>
